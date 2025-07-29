@@ -226,6 +226,15 @@ def set_gripper(value):
 
     return action_gripper.get_result()
 
+def set_model_fixed(model_name):
+    req=AttachRequest()
+    req.model_name_1= model_name
+    req.link_name_1="link"
+    req.model_name_2=last_gazebo_model_name
+    req.link_name_2="link"
+    attach_srv.call(req)
+
+
 
 if __name__ == "__main__":
     print("Initializing node of kinematics")
@@ -259,7 +268,8 @@ if __name__ == "__main__":
     ordered_models=burger_sort(elements)
     x, y = PILING_LOCATION[0], PILING_LOCATION[1]
     cumulative_height = 0.0
-  
+    last_gazebo_model_name= "ground_plane"
+
     for model_name, model_pose in ordered_models:
         open_gripper()
         try:
@@ -300,8 +310,13 @@ if __name__ == "__main__":
         controller.move_to(x, y, release_z, target_quat=approach_quat)
 
         # Rilascia il pezzo
+
         open_gripper(gazebo_model_name)
         rospy.sleep(0.5)
+        
+        set_model_fixed(gazebo_model_name)
+        print(f"attached {gazebo_model_name} to {last_gazebo_model_name}")
+        last_gazebo_model_name= gazebo_model_name
 
 
         # Sollevati
