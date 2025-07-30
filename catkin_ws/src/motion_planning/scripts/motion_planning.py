@@ -14,6 +14,15 @@ import numpy as np
 from gazebo_ros_link_attacher.srv import SetStatic, SetStaticRequest, SetStaticResponse
 from gazebo_ros_link_attacher.srv import Attach, AttachRequest, AttachResponse
 from collections import defaultdict
+<<<<<<< HEAD
+=======
+from openai import OpenAI
+import json
+
+client = OpenAI(api_key= "api key")
+
+
+>>>>>>> 431b0d7... utente sceglie ingredienti
 PKG_PATH = os.path.dirname(os.path.abspath(__file__))
 
 PILING_LOCATION=[0.35, -0.5, 0.774]
