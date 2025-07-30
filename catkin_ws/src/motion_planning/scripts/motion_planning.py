@@ -17,7 +17,6 @@ from collections import defaultdict
 from openai import OpenAI
 import json
 
-#cclient = OOpenAI(api_key= "")
 
 
 PKG_PATH = os.path.dirname(os.path.abspath(__file__))
