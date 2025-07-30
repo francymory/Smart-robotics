@@ -17,7 +17,7 @@ from collections import defaultdict
 from openai import OpenAI
 import json
 
-client = OpenAI(api_key= "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")
+client = OpenAI(api_key= "api key")
 
 
 PKG_PATH = os.path.dirname(os.path.abspath(__file__))
