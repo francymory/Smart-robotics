@@ -14,6 +14,12 @@ import numpy as np
 from gazebo_ros_link_attacher.srv import SetStatic, SetStaticRequest, SetStaticResponse
 from gazebo_ros_link_attacher.srv import Attach, AttachRequest, AttachResponse
 from collections import defaultdict
+from openai import OpenAI
+import json
+
+client = OpenAI(api_key= "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")
+
+
 PKG_PATH = os.path.dirname(os.path.abspath(__file__))
 
 PILING_LOCATION=[0.35, -0.5, 0.774]
@@ -234,6 +240,84 @@ def set_model_fixed(model_name):
     req.link_name_2="link"
     attach_srv.call(req)
 
+def get_ingredient_list_from_user():
+    print("\nHai a disposizione questi ingredienti:")
+    print("  bread, meat, cheese, tomato, salad")
+    print("Scrivi la lista separata da virgole, es:")
+    print("  bread, meat, meat, cheese, bread")
+    user_input = input("\nIngredienti del panino (dal basso verso l’alto): ")
+
+    # Pulisci e normalizza
+    raw_ingredients = [item.strip().lower() for item in user_input.split(",")]
+
+    valid_ingredients = {"bread", "meat", "cheese", "tomato", "salad"}
+    filtered_ingredients = []
+
+    for ing in raw_ingredients:
+        if ing in valid_ingredients:
+            filtered_ingredients.append(ing)
+        else:
+            print(f" Ingrediente non valido ignorato: {ing}")
+
+    if not filtered_ingredients:
+        print(" Nessun ingrediente valido fornito. Uso fallback.")
+        return ['bread', 'meat', 'cheese', 'bread']
+
+    return filtered_ingredients
+
+
+
+def get_ingredient_list_from_gpt():
+    prompt = (
+        "Sei un assistente per un robot che costruisce panini.\n"
+        "Ingredienti disponibili: bread, meat, cheese, tomato, salad.\n"
+        "L'utente può chiedere ingredienti anche in quantità multiple (es: doppia carne, extra formaggio).\n"
+        "Restituisci **solo** una lista JSON ordinata con i nomi degli ingredienti (in inglese), "
+        "in ordine dal basso verso l’alto del panino, iniziando e finendo con il 'bread'.\n"
+        "Esempio output: [\"bread\", \"meat\", \"meat\", \"cheese\", \"tomato\", \"bread\"]\n\n"
+        "Frase dell’utente: "
+    )
+
+    user_input = input("Cosa vuoi nel tuo panino? (ingredienti disponibili: insalata, carne, formaggio e pomodoro): ")
+    full_prompt = prompt + user_input
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",  
+        messages=[
+            {"role": "user", "content": full_prompt}
+        ],
+        temperature=0.3
+    )
+
+    try:
+        content = response.choices[0].message.content
+        ingredient_list = json.loads(content)
+        print(f"\nIngredienti scelti: {ingredient_list}")
+        return ingredient_list
+    except Exception as e:
+        print("Errore interpretando la risposta GPT, uso fallback:", e)
+        return ['bread', 'meat', 'cheese', 'tomato', 'bread']
+
+
+def burger_sort_gpt(elements, ingredient_order):
+    ingredient_map = defaultdict(list)
+
+    for name, pose in elements:
+        ingredient = get_model_name(name)
+        if ingredient in MODEL_SIZES:
+            ingredient_map[ingredient].append((name, pose))
+        else:
+            print(f"Ingrediente sconosciuto: {name}")
+
+    ordered_models = []
+    for ingredient in ingredient_order:
+        if ingredient_map[ingredient]:
+            ordered_models.append(ingredient_map[ingredient].pop(0))
+        else:
+            print(f"Ingrediente mancante: {ingredient}")
+    return ordered_models
+
+
 
 
 if __name__ == "__main__":
@@ -265,7 +349,9 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
     elements = get_elements_pos(vision=True)
 
-    ordered_models=burger_sort(elements)
+    user_ingredients = get_ingredient_list_from_user()
+    ordered_models = burger_sort_gpt(elements, user_ingredients)
+
     x, y = PILING_LOCATION[0], PILING_LOCATION[1]
     cumulative_height = 0.0
     last_gazebo_model_name= "ground_plane"
