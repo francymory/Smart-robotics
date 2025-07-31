@@ -271,7 +271,6 @@ import json
 
 # Configura endpoint personalizzato per OpenRouter
 
-
 VALID_INGREDIENTS = {"bread", "meat", "cheese", "tomato", "salad"}
 
 
@@ -279,10 +278,10 @@ def get_ingredient_list_from_gpt():
     prompt = (
         "Sei un assistente per un robot che costruisce panini.\n"
         "Ingredienti disponibili: bread, meat, cheese, tomato, salad.\n"
-        "L'utente può chiedere in italiano o inglese un panino con ingredienti anche in quantità multiple (es: doppia carne, extra formaggio)."
+        "L'utente può chiedere in italiano o inglese un panino con ingredienti anche in quantità multiple (es: doppia carne, extra formaggio).\n"
         "L'utente può chiedere anche un panino completo (bread, meat, cheese, tomato, salad, bread) e può chiedere un panino senza certi ingredienti e in quel caso dagli un panino completo senza gli ingredienti specificati.\n"
-        "Restituisci **solo** una lista JSON ordinata con i nomi degli ingredienti (in inglese), "
-        "in ordine dal basso verso l’alto del panino, iniziando e finendo con il 'bread', a meno che l'utente chieda specificatamente che non vuole il bread.\n"
+        "Restituisci **solo** una lista JSON ordinata con i nomi degli ingredienti (in inglese), in ordine dal basso verso l’alto del panino, iniziando e finendo con il 'bread' \n"
+        "Se l'utente dice che non vuole il pane gli dai solo la lista di ingredienti richiesti senza 'bread'.\n"
         "Esempio input: Voglio un burger senza pomodoro con extra formaggio, output: [\"bread\", \"meat\", \"cheese\", \"cheese\", \"salad\",\"bread\"]\n\n"
         "Frase dell’utente: "
     )
