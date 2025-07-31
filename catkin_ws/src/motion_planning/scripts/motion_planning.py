@@ -266,36 +266,55 @@ def get_ingredient_list_from_user():
 
 
 
+import openai
+import json
+
+# Configura endpoint personalizzato per OpenRouter
+
+
+VALID_INGREDIENTS = {"bread", "meat", "cheese", "tomato", "salad"}
+
+
 def get_ingredient_list_from_gpt():
     prompt = (
         "Sei un assistente per un robot che costruisce panini.\n"
         "Ingredienti disponibili: bread, meat, cheese, tomato, salad.\n"
-        "L'utente può chiedere ingredienti anche in quantità multiple (es: doppia carne, extra formaggio).\n"
+        "L'utente può chiedere in italiano o inglese un panino con ingredienti anche in quantità multiple (es: doppia carne, extra formaggio)."
+        "L'utente può chiedere anche un panino completo (bread, meat, cheese, tomato, salad, bread) e può chiedere un panino senza certi ingredienti e in quel caso dagli un panino completo senza gli ingredienti specificati.\n"
         "Restituisci **solo** una lista JSON ordinata con i nomi degli ingredienti (in inglese), "
-        "in ordine dal basso verso l’alto del panino, iniziando e finendo con il 'bread'.\n"
-        "Esempio output: [\"bread\", \"meat\", \"meat\", \"cheese\", \"tomato\", \"bread\"]\n\n"
+        "in ordine dal basso verso l’alto del panino, iniziando e finendo con il 'bread', a meno che l'utente chieda specificatamente che non vuole il bread.\n"
+        "Esempio input: Voglio un burger senza pomodoro con extra formaggio, output: [\"bread\", \"meat\", \"cheese\", \"cheese\", \"salad\",\"bread\"]\n\n"
         "Frase dell’utente: "
     )
 
-    user_input = input("Cosa vuoi nel tuo panino? (ingredienti disponibili: insalata, carne, formaggio e pomodoro): ")
-    full_prompt = prompt + user_input
+    while True:
+        user_input = input("What would you like in your burger? You can choose among these ingredients: salad, meat, cheese, tomato. You can ask for an extra of each ingredient: ")
+        full_prompt = prompt + user_input
 
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",  
-        messages=[
-            {"role": "user", "content": full_prompt}
-        ],
-        temperature=0.3
-    )
+        try:
+            response = client.chat.completions.create(
+                model="mistralai/mistral-7b-instruct:free",
+                messages=[{"role": "user", "content": full_prompt}],
+                temperature=0.3
+            )
 
-    try:
-        content = response.choices[0].message.content
-        ingredient_list = json.loads(content)
-        print(f"\nIngredienti scelti: {ingredient_list}")
-        return ingredient_list
-    except Exception as e:
-        print("Errore interpretando la risposta GPT, uso fallback:", e)
-        return ['bread', 'meat', 'cheese', 'tomato', 'bread']
+            content = response.choices[0].message.content
+            ingredient_list = json.loads(content)
+
+            # Verifica se ci sono ingredienti non validi
+            invalid = [i for i in ingredient_list if i not in VALID_INGREDIENTS]
+
+            if invalid:
+                print(f"\n We don't have these ingredients: {invalid}")
+                print(" Please choose among these ingredients:", VALID_INGREDIENTS)
+                continue
+
+            print(f"\n I will create a burger with: {ingredient_list}")
+            return ingredient_list
+
+        except Exception as e:
+            print(" I have not understood, so I'm giving you a default burger", e)
+            return ['bread', 'meat', 'cheese', 'tomato', 'bread']
 
 
 def burger_sort_gpt(elements, ingredient_order):
@@ -306,14 +325,14 @@ def burger_sort_gpt(elements, ingredient_order):
         if ingredient in MODEL_SIZES:
             ingredient_map[ingredient].append((name, pose))
         else:
-            print(f"Ingrediente sconosciuto: {name}")
+            print(f"We don't have: {name}")
 
     ordered_models = []
     for ingredient in ingredient_order:
         if ingredient_map[ingredient]:
             ordered_models.append(ingredient_map[ingredient].pop(0))
         else:
-            print(f"Ingrediente mancante: {ingredient}")
+            print(f"We ran out of: {ingredient}")
     return ordered_models
 
 
@@ -348,7 +367,7 @@ if __name__ == "__main__":
     rospy.sleep(0.5)
     elements = get_elements_pos(vision=True)
 
-    user_ingredients = get_ingredient_list_from_user()
+    user_ingredients = get_ingredient_list_from_gpt()
     ordered_models = burger_sort_gpt(elements, user_ingredients)
 
     x, y = PILING_LOCATION[0], PILING_LOCATION[1]
@@ -400,7 +419,7 @@ if __name__ == "__main__":
         rospy.sleep(0.5)
         
         set_model_fixed(gazebo_model_name)
-        print(f"attached {gazebo_model_name} to {last_gazebo_model_name}")
+        print(f"Attached {gazebo_model_name} to {last_gazebo_model_name}")
         last_gazebo_model_name= gazebo_model_name
 
 
@@ -414,6 +433,7 @@ if __name__ == "__main__":
         if controller.gripper_pose[0][1] > -0.3 and controller.gripper_pose[0][0] > 0:
             controller.move_to(*DEFAULT_POS, DEFAULT_QUAT)
     print("Moving to Default Position")
+    print("Here is your burger!")
     controller.move_to(*DEFAULT_POS, DEFAULT_QUAT)
     open_gripper()
     rospy.sleep(0.4)
