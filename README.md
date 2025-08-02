@@ -51,7 +51,7 @@ For running each sample code:
 
 After installing the libraries needed to run the project. Clone this repo:
 ```
-git clone https://github.com/melottiv/smart-robotics
+git clone https://github.com/francymory/Smart-robotics.git
 ```
 
 Setup the project:
