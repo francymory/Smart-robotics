@@ -270,7 +270,10 @@ import openai
 import json
 
 # Configura endpoint personalizzato per OpenRouter
-
+client = openai.OpenAI(
+    api_key="",  # La tua chiave da openrouter.ai
+    base_url="https://openrouter.ai/api/v1"
+)
 
 VALID_INGREDIENTS = {"bread", "meat", "cheese", "tomato", "salad"}
 
