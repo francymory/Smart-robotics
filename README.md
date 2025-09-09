@@ -26,7 +26,7 @@ The goals of this project are:
 
 ### Folder
 ```
-smart-robotics/catkin_ws/src
+Smart-robotics/catkin_ws/src
 ├── ninja_manager
 ├── vision
 ├── motion_planning
@@ -56,7 +56,7 @@ git clone https://github.com/francymory/Smart-robotics.git
 
 Setup the project:
 ```
-cd smart-robotics/catkin_ws
+cd Smart-robotics/catkin_ws
 source /opt/ros/noetic/setup.bash
 catkin build
 source devel/setup.bash
